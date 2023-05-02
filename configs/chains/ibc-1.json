@@ -2,9 +2,9 @@
   "type": "cosmos",
   "value": {
     "key": "testkey",
-    "chain-id": "evmos_9000-123",
+    "chain-id": "ibc-1",
     "rpc-addr": "http://localhost:26557",
-    "account-prefix": "evmos",
+    "account-prefix": "sooho",
     "gas-adjustment": 1.5,
     "gas-prices": "0.025stake",
     "trusting-period": "336h",

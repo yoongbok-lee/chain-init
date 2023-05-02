@@ -27,6 +27,7 @@ RPCPORT=$4
 P2PPORT=$5
 PROFPORT=$6
 GRPCPORT=$7
+RESTPORT=$8
 
 if [ -z "$1" ]; then
   display_usage "[BINARY] ($BINARY|akash)"
@@ -56,6 +57,10 @@ if [ -z "$7" ]; then
   display_usage "[GRPC_PORT]"
 fi
 
+if [ -z "$8" ]; then
+  display_usage "[REST_PORT]"
+fi
+
 echo "Creating $BINARY instance: home=$CHAINDIR | chain-id=$CHAINID | p2p=:$P2PPORT | rpc=:$RPCPORT | profiling=:$PROFPORT | grpc=:$GRPCPORT"
 
 # Add dir for chain, exit if error
@@ -65,17 +70,18 @@ if ! mkdir -p $CHAINDIR/$CHAINID 2>/dev/null; then
 fi
 
 # Build genesis file incl account for passed address
-chain_one_coins="100000000000stake,100000000000umuon,100000000000test"
-chain_two_coins="100000000000stake,100000000000umuon"
-delegate="100000000000stake"
+chain_one_coins="100000000000000000000stake,100000000000umuon,100000000000test,1000000000000000000000000aevmos"
+chain_two_coins="100000000000000000000stake,100000000000umuon,1000000000000000000000000aevmos"
+delegate="100000000000000000000stake"
 
 $BINARY --home $CHAINDIR/$CHAINID --chain-id $CHAINID init $CHAINID
 $BINARY --home $CHAINDIR/$CHAINID keys add validator $KEYRING --output json > $CHAINDIR/$CHAINID/validator_seed.json
-$BINARY --home $CHAINDIR/$CHAINID keys add user $KEYRING --output json > $CHAINDIR/$CHAINID/key_seed.json
-$BINARY --home $CHAINDIR/$CHAINID add-genesis-account $($BINARY --home $CHAINDIR/$CHAINID keys $KEYRING show user -a) $chain_one_coins
+$BINARY --home $CHAINDIR/$CHAINID keys add testkey $KEYRING --output json > $CHAINDIR/$CHAINID/key_seed.json
+$BINARY --home $CHAINDIR/$CHAINID add-genesis-account $($BINARY --home $CHAINDIR/$CHAINID keys $KEYRING show testkey -a) $chain_one_coins
 $BINARY --home $CHAINDIR/$CHAINID add-genesis-account $($BINARY --home $CHAINDIR/$CHAINID keys $KEYRING show validator -a) $chain_two_coins
 $BINARY --home $CHAINDIR/$CHAINID gentx validator $delegate $KEYRING --chain-id $CHAINID
 $BINARY --home $CHAINDIR/$CHAINID collect-gentxs
+$BINARY --home $CHAINDIR/$CHAINID config keyring-backend test
 
 # Check platform
 platform='unknown'
@@ -93,6 +99,10 @@ if [ $platform = 'linux' ]; then
   sed -i 's/timeout_commit = "5s"/timeout_commit = "1s"/g' $CHAINDIR/$CHAINID/config/config.toml
   sed -i 's/timeout_propose = "3s"/timeout_propose = "1s"/g' $CHAINDIR/$CHAINID/config/config.toml
   sed -i 's/index_all_keys = false/index_all_keys = true/g' $CHAINDIR/$CHAINID/config/config.toml
+  sed -i 's#"tcp://0.0.0.0:1317"#"tcp://0.0.0.0:'"$RESTPORT"'"#g' $CHAINDIR/$CHAINID/config/app.toml
+  sed -i 's#"tcp://localhost:26657"#"tcp://localhost:'"$RPCPORT"'"#g' $CHAINDIR/$CHAINID/config/client.toml
+
+
   # sed -i '' 's#index-events = \[\]#index-events = \["message.action","send_packet.packet_src_channel","send_packet.packet_sequence"\]#g' $CHAINDIR/$CHAINID/config/app.toml
 else
   sed -i '' 's#"tcp://127.0.0.1:26657"#"tcp://0.0.0.0:'"$RPCPORT"'"#g' $CHAINDIR/$CHAINID/config/config.toml
@@ -101,6 +111,8 @@ else
   sed -i '' 's/timeout_commit = "5s"/timeout_commit = "1s"/g' $CHAINDIR/$CHAINID/config/config.toml
   sed -i '' 's/timeout_propose = "3s"/timeout_propose = "1s"/g' $CHAINDIR/$CHAINID/config/config.toml
   sed -i '' 's/index_all_keys = false/index_all_keys = true/g' $CHAINDIR/$CHAINID/config/config.toml
+  sed -i '' 's#"tcp://0.0.0.0:1317"#"tcp://0.0.0.0:'"$RESTPORT"'"#g' $CHAINDIR/$CHAINID/config/app.toml
+  sed -i '' 's#"tcp://localhost:26657"#"tcp://localhost:'"$RPCPORT"'"#g' $CHAINDIR/$CHAINID/config/client.toml
   # sed -i '' 's#index-events = \[\]#index-events = \["message.action","send_packet.packet_src_channel","send_packet.packet_sequence"\]#g' $CHAINDIR/$CHAINID/config/app.toml
 fi
 
