@@ -82,7 +82,8 @@ $BINARY --home $CHAINDIR/$CHAINID add-genesis-account $($BINARY --home $CHAINDIR
 $BINARY --home $CHAINDIR/$CHAINID gentx validator $delegate $KEYRING --chain-id $CHAINID
 $BINARY --home $CHAINDIR/$CHAINID collect-gentxs
 $BINARY --home $CHAINDIR/$CHAINID config keyring-backend test
-
+#jq '.app_state.admin.admins.admins = ["'$($BINARY --home $CHAINDIR/$CHAINID keys show testkey -a)'"]' $CHAINDIR/$CHAINID/config/genesis.json > tmp.json && mv tmp.json $CHAINDIR/$CHAINID/config/genesis.json
+jq '.app_state.gov.voting_params.voting_period = "10s"' $CHAINDIR/$CHAINID/config/genesis.json > tmp.json && mv tmp.json $CHAINDIR/$CHAINID/config/genesis.json
 # Check platform
 platform='unknown'
 unamestr=`uname`
@@ -119,3 +120,4 @@ fi
 sleep 1
 # Start the gaia
 echo "$BINARY --home $CHAINDIR/$CHAINID start --pruning=nothing --grpc-web.enable=false --grpc.address=0.0.0.0:$GRPCPORT &" | bash - > $CHAINDIR/$CHAINID.log 2>&1
+#$BINARY --home $CHAINDIR/$CHAINID start --pruning=nothing --grpc-web.enable=false --grpc.address=0.0.0.0:$GRPCPORT > $CHAINDIR/$CHAINID.log 2>&1
